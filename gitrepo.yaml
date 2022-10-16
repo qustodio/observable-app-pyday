@@ -1,11 +1,13 @@
 apiVersion: fleet.cattle.io/v1alpha1
 kind: GitRepo
 metadata:
-  name: sample
+  name: observable-app
   # This namespace is special and auto-wired to deploy to the local cluster
   namespace: fleet-local
 spec:
-  # Everything from this repo will be ran in this cluster. You trust me right?
-  repo: "https://github.com/rancher/fleet-examples"
+  targetNamespace: pyday
+  branch: main
+
+  repo: "https://github.com/qustodio/observable-app-pyday"
   paths:
-  - simple
+  - helm

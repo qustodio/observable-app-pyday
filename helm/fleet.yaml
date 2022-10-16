@@ -1,0 +1,81 @@
+# The default namespace to be applied to resources. This field is not used to
+# enforce or lock down the deployment to a specific namespace, but instead
+# provide the default value of the namespace field if one is not specified
+# in the manifests.
+# Default: default
+defaultNamespace: pyday
+
+# All resources will be assigned to this namespace and if any cluster scoped
+# resource exists the deployment will fail.
+# Default: ""
+namespace: pyday
+
+helm:
+  # Use a custom location for the Helm chart. This can refer to any go-getter URL or
+  # OCI registry based helm chart URL e.g. "oci://ghcr.io/fleetrepoci/guestbook".
+  # This allows one to download charts from most any location.  Also know that
+  # go-getter URL supports adding a digest to validate the download. If repo
+  # is set below this field is the name of the chart to lookup
+#  chart: ./chart
+  # A https URL to a Helm repo to download the chart from. It's typically easier
+  # to just use `chart` field and refer to a tgz file.  If repo is used the
+  # value of `chart` will be used as the chart name to lookup in the Helm repository.
+#  repo: https://charts.rancher.io
+  # A custom release name to deploy the chart as. If not specified a release name
+  # will be generated.
+  releaseName: observable-app-test
+  # Allow to use values files from configmaps or secrets
+  # Override immutable resources. This could be dangerous.
+  force: false
+  # Set the Helm --atomic flag when upgrading
+  atomic: false
+
+# A paused bundle will not update downstream clusters but instead mark the bundle
+# as OutOfSync. One can then manually confirm that a bundle should be deployed to
+# the downstream clusters.
+# Default: false
+paused: false
+
+rolloutStrategy:
+    # A number or percentage of clusters that can be unavailable during an update
+    # of a bundle. This follows the same basic approach as a deployment rollout
+    # strategy. Once the number of clusters meets unavailable state update will be
+    # paused. Default value is 100% which doesn't take effect on update.
+    # default: 100%
+    maxUnavailable: 15%
+    # A number or percentage of cluster partitions that can be unavailable during
+    # an update of a bundle.
+    # default: 0
+    maxUnavailablePartitions: 20%
+    # A number of percentage of how to automatically partition clusters if not
+    # specific partitioning strategy is configured.
+    # default: 25%
+    autoPartitionSize: 10%
+    # A list of definitions of partitions.  If any target clusters do not match
+    # the configuration they are added to partitions at the end following the
+    # autoPartitionSize.
+    partitions:
+      # A user friend name given to the partition used for Display (optional).
+      # default: ""
+    - name: canary
+      # A number or percentage of clusters that can be unavailable in this
+      # partition before this partition is treated as done.
+      # default: 10%
+      maxUnavailable: 10%
+      # Selector matching cluster labels to include in this partition
+      clusterSelector:
+        matchLabels:
+          env: prod
+      # A cluster group name to include in this partition
+      clusterGroup: agroup
+      # Selector matching cluster group labels to include in this partition
+      clusterGroupSelector: agroup
+
+# Target customization are used to determine how resources should be modified per target
+# Targets are evaluated in order and the first one to match a cluster is used for that cluster.
+targetCustomizations:
+# The name of target. If not specified a default name of the format "target000"
+# will be used. This value is mostly for display
+- name: test
+  helm: {}
+  clusterGroup: default
