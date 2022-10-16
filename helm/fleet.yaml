@@ -51,25 +51,6 @@ rolloutStrategy:
     # specific partitioning strategy is configured.
     # default: 25%
     autoPartitionSize: 10%
-    # A list of definitions of partitions.  If any target clusters do not match
-    # the configuration they are added to partitions at the end following the
-    # autoPartitionSize.
-    partitions:
-      # A user friend name given to the partition used for Display (optional).
-      # default: ""
-    - name: canary
-      # A number or percentage of clusters that can be unavailable in this
-      # partition before this partition is treated as done.
-      # default: 10%
-      maxUnavailable: 10%
-      # Selector matching cluster labels to include in this partition
-      clusterSelector:
-        matchLabels:
-          env: prod
-      # A cluster group name to include in this partition
-      clusterGroup: agroup
-      # Selector matching cluster group labels to include in this partition
-      clusterGroupSelector: agroup
 
 # Target customization are used to determine how resources should be modified per target
 # Targets are evaluated in order and the first one to match a cluster is used for that cluster.
