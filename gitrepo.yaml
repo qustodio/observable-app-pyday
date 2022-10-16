@@ -7,7 +7,6 @@ metadata:
 spec:
   targetNamespace: pyday
   branch: main
-
   repo: "https://github.com/qustodio/observable-app-pyday"
   paths:
   - helm

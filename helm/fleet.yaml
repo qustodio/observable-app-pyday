@@ -2,8 +2,6 @@
 # enforce or lock down the deployment to a specific namespace, but instead
 # provide the default value of the namespace field if one is not specified
 # in the manifests.
-# Default: default
-defaultNamespace: pyday
 
 # All resources will be assigned to this namespace and if any cluster scoped
 # resource exists the deployment will fail.
@@ -52,11 +50,3 @@ rolloutStrategy:
     # default: 25%
     autoPartitionSize: 10%
 
-# Target customization are used to determine how resources should be modified per target
-# Targets are evaluated in order and the first one to match a cluster is used for that cluster.
-targetCustomizations:
-# The name of target. If not specified a default name of the format "target000"
-# will be used. This value is mostly for display
-- name: test
-  helm: {}
-  clusterGroup: default
