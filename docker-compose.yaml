@@ -1,0 +1,10 @@
+version: "3.10"
+
+services:
+  api:
+    build:
+      context: .
+    volumes:
+      - ./api:/opt/api
+    ports:
+      - 8000:8000
