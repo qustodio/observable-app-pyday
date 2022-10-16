@@ -50,3 +50,12 @@ rolloutStrategy:
     # default: 25%
     autoPartitionSize: 10%
 
+targetCustomizations:
+# The name of target. If not specified a default name of the format "target000"
+# will be used. This value is mostly for display
+- name: prod
+  # Custom namespace value overriding the value at the root
+  namespace: pyday
+  # Custom Helm options override the options at the root
+  helm: {}
+  clusterName: local
