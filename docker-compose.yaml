@@ -1,12 +1,55 @@
 version: "3.10"
 
 services:
-
+  api:
+    build:
+      context: api
+    volumes:
+      - ./api:/opt/api
+    ports:
+      - "8000:8000"
+    logging:
+      driver: loki
+      options:
+        loki-url: http://localhost:3100/loki/api/v1/push
+        loki-pipeline-stages: |
+          - regex:
+              expression: '(level|lvl|severity)=(?P<level>\w+)'
+          - labels:
+              level:
 
   users:
     build:
       context: users
     volumes:
-      - ./users/main.py:/opt/users/main.py
+      - ./users:/opt/users
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./compose/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
-      - 8000:8000
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki
+    volumes:
+      - ./compose/loki/loki-config.yaml:/mnt/config/loki-config.yaml
+    ports:
+      - "3100:3100"
+    command:
+      - -config.file=/mnt/config/loki-config.yaml
+
+  promtail:
+    image: grafana/promtail:1.4.1
+    volumes:
+      - /home/antonio/.docker_data/containers:/var/lib/docker/containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/promtail-config.yml
+    command: -config.file=/etc/promtail/promtail-config.yml
+
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - "3000:3000"
+    user: '104'
