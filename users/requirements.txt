@@ -1,2 +1,8 @@
 fastapi
+SQLAlchemy
 uvicorn
+python-jose
+passlib
+python-multipart
+
+ipdb

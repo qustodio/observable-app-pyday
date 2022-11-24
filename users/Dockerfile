@@ -1,7 +1,14 @@
-FROM python:3.10.8
+FROM python:3.11
+
+ENV PYTHONPATH "${PYTHONPATH}:/opt/config/"
 
 COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-RUN mkdir -p /opt/users
-COPY ./main.py /opt/users/main.py
+COPY ./src /opt/users
+RUN mkdir -p /opt/config/
+
+EXPOSE 8000
+
+WORKDIR /opt/users
+CMD python -m uvicorn main:app --host 0.0.0.0 --port 8000
