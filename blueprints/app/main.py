@@ -6,31 +6,10 @@ import httpx
 import uvicorn
 from typing import Optional
 from fastapi import FastAPI, Response
-from opentelemetry.propagate import inject
-
-from utils import PrometheusMiddleware, metrics, setting_otlp
 
 APP_NAME = os.environ.get("APP_NAME", "blueprints-app")
-OTLP_GRPC_ENDPOINT = os.environ.get("OTLP_GRPC_ENDPOINT", "http://tempo:4317")
 
 app = FastAPI()
-
-# Setting metrics middleware
-app.add_middleware(PrometheusMiddleware, app_name=APP_NAME)
-app.add_route("/metrics", metrics)
-
-# Setting OpenTelemetry exporter
-setting_otlp(app, APP_NAME, OTLP_GRPC_ENDPOINT)
-
-
-class EndpointFilter(logging.Filter):
-    # Uvicorn endpoint access log filter
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.getMessage().find("GET /metrics") == -1
-
-
-# Filter out /endpoint
-logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
 
 @app.get("/api/blueprints")
@@ -97,8 +76,4 @@ async def random_sleep(response: Response):
 #     return {"path": "/chain"}
 
 if __name__ == "__main__":
-    # update uvicorn access logger format
-    log_config = uvicorn.config.LOGGING_CONFIG
-    log_config["formatters"]["access"][
-        "fmt"] = "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s"
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=log_config)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
