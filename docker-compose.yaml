@@ -45,6 +45,7 @@ services:
               expression: '(level|lvl|severity)=(?P<level>\w+)'
           - labels:
               level:
+              severity:
 
   users:
     build:
@@ -68,6 +69,9 @@ services:
       - ./compose/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --enable-feature=exemplar-storage
 
   loki:
     image: grafana/loki
@@ -77,6 +81,15 @@ services:
       - "3100:3100"
     command:
       - -config.file=/mnt/config/loki-config.yaml
+
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./compose/tempo/tempo-local.yaml:/etc/tempo.yaml
+#      - ./tempo-data:/tmp/tempo
+    ports:
+      - "14268"  # jaeger ingest
 
   promtail:
     depends_on:
@@ -101,6 +114,8 @@ services:
       - loki
       - prometheus
     image: grafana/grafana-oss
+    volumes:
+      - ./compose/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yml
     ports:
       - "3000:3000"
     user: '104'
