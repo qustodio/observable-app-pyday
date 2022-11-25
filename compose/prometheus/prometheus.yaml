@@ -11,6 +11,13 @@ scrape_configs:
           - api:8000
         labels:
           job: api
+  - job_name: blueprints
+    honor_labels: true
+    static_configs:
+      - targets:
+        - blueprints:8000
+      - labels:
+          job: blueprints
   - job_name: prometheus
     honor_timestamps: true
     scrape_interval: 15s
