@@ -12,22 +12,6 @@ services:
       - "8080:80"
       - "8081:8081"
 
-  api:
-    build:
-      context: api
-    volumes:
-      - ./api:/opt/api
-      - ./config.py:/opt/config/config.py
-    logging:
-      driver: loki
-      options:
-        loki-url: http://localhost:3100/loki/api/v1/push
-        loki-pipeline-stages: |
-          - regex:
-              expression: '(level|lvl|severity)=(?P<level>\w+)'
-          - labels:
-              level:
-
   blueprints:
     build:
       context: blueprints
@@ -35,7 +19,6 @@ services:
       replicas: 2
     volumes:
       - ./blueprints/app:/opt/blueprints
-      - ./bs_lib:/usr/local/lib/python3.11/site-packages/bs_libs
     logging:
       driver: loki
       options:
@@ -52,7 +35,6 @@ services:
       context: users
     volumes:
       - ./users/src:/opt/users
-      - ./bs_lib:/usr/local/lib/python3.11/site-packages/bs_lib
     logging:
       driver: loki
       options:
@@ -119,3 +101,19 @@ services:
     ports:
       - "3000:3000"
     user: '104'
+
+  locust-master:
+    image: locustio/locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./compose/locust:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --master -H http://master:8089
+
+  locust-worker:
+    image: locustio/locust
+    volumes:
+      - ./compose/locust:/mnt/locust
+    deploy:
+      replicas: 2
+    command: -f /mnt/locust/locustfile.py --worker --master-host locust-master

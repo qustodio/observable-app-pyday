@@ -1,79 +1,81 @@
 import logging
-import os
-import random
-import time
+import sys
+
 import httpx
 import uvicorn
-from typing import Optional
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-APP_NAME = os.environ.get("APP_NAME", "blueprints-app")
+import crud
+import models
+import schemas
+from database import SessionLocal, engine
 
+models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
-
-@app.get("/api/blueprints")
-async def read_root():
-    logging.error("Hello World")
-    return {"Message": "Ola k ase?"}
+logger = logging.getLogger("uvicorn.blueprints")
 
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: int, q: Optional[str] = None):
-    logging.error("items")
-    return {"item_id": item_id, "q": q}
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
-@app.get("/io_task")
-async def io_task():
-    time.sleep(1)
-    logging.error("io task")
-    return "IO bound task finish!"
+def get_user(request: Request):
+    header_token = request.headers.get("Authorization")
+    if header_token is not None:
+        response = httpx.get(
+            url='http://users:8000/users/me',
+            headers={
+                "Authorization": header_token
+            }
+        )
+
+        return response.json()
 
 
-@app.get("/cpu_task")
-async def cpu_task():
-    for i in range(1000):
-        n = i * i * i
-    logging.error("cpu task")
-    return "CPU bound task finish!"
+@app.get("/blueprints", response_model=list[schemas.Blueprint])
+def read_blueprints(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    bps = crud.get_blueprints(db, skip=skip, limit=limit)
+    return bps
 
 
-@app.get("/random_status")
-async def random_status(response: Response):
-    response.status_code = random.choice([200, 200, 300, 400, 500])
-    logging.error("random status")
-    return {"path": "/random_status"}
+@app.post("/blueprint", response_model=schemas.Blueprint)
+def create_blueprint(bp: schemas.BlueprintCreate, request: Request, db: Session = Depends(get_db)):
+    user = get_user(request)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized user"
+        )
+    logger.info(f"Created blueprint by: {user['username']}")
+    bp = crud.create_blueprint(db=db, blueprint=bp)
+    return bp
 
 
-@app.get("/random_sleep")
-async def random_sleep(response: Response):
-    time.sleep(random.randint(0, 5))
-    logging.error("random sleep")
-    return {"path": "/random_sleep"}
+@app.get("/blueprint/{bp_id}", response_model=schemas.Blueprint)
+def read_blueprint_by_id(bp_id: int, db: Session = Depends(get_db)):
+    db_blueprint = crud.get_blueprint_by_id(db, blueprint_id=bp_id)
+    if db_blueprint is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Blueprint not found"
+        )
+    return db_blueprint
 
 
-@app.get("/error_test")
-async def random_sleep(response: Response):
-    logging.error("got error!!!!")
-    raise ValueError("value error")
+@app.on_event("startup")
+async def startup_event():
+    logger = logging.getLogger("uvicorn")
+    formatter = logging.Formatter("[%(asctime)s] - %(name)s - %(levelname)s - %(message)s")
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
 
-
-# @app.get("/chain")
-# async def chain(response: Response):
-#
-#     headers = {}
-#     inject(headers)  # inject trace info to header
-#     logging.critical(headers)
-#
-#     async with httpx.AsyncClient() as client:
-#         await client.get(f"http://localhost:8000/", headers=headers,)
-#     async with httpx.AsyncClient() as client:
-#         await client.get(f"http://{TARGET_ONE_HOST}:8000/io_task", headers=headers,)
-#     async with httpx.AsyncClient() as client:
-#         await client.get(f"http://{TARGET_TWO_HOST}:8000/cpu_task", headers=headers,)
-#     logging.info("Chain Finished")
-#     return {"path": "/chain"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
