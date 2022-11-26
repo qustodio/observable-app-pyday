@@ -5,7 +5,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/opt/config/"
 COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-COPY ./src /opt/users
+COPY app /opt/users
 RUN mkdir -p /opt/config/
 
 EXPOSE 8000

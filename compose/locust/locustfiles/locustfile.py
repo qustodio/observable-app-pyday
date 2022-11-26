@@ -10,7 +10,10 @@ class BasicUsage(HttpUser):
     fake_username = f"test+{random_mark}"
     fake_password = "test"
     fake_email = f"test{random_mark}@gmail.com"
-    headers = dict()
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:53.0) Gecko/20100101 Firefox/53.0"
+    headers = {
+        "User-Agent": user_agent
+    }
 
     @task
     def get_blueprints(self):
@@ -30,16 +33,14 @@ class BasicUsage(HttpUser):
     @task
     def get_blueprint_by_id(self):
         self.client.get(
-            f"/blueprint/{randint(1, 10)}"
+            f"/blueprint/{randint(1, 10)}",
+            headers=self.headers,
         )
-
-    @task
-    def post_token(self):
-        pass
 
     def on_start(self):
         with self.client.post(
             "/users/",
+            headers=self.headers,
             json={
                 "username": self.fake_username,
                 "password": self.fake_password,
@@ -49,6 +50,7 @@ class BasicUsage(HttpUser):
             print(response.content)
         with self.client.post(
             "/token",
+            headers=self.headers,
             data={
                 "username": self.fake_username,
                 "password": self.fake_password,

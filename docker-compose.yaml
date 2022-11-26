@@ -11,6 +11,16 @@ services:
     ports:
       - "8080:80"
       - "8081:8081"
+    logging:
+      driver: loki
+      options:
+        loki-url: http://localhost:3100/loki/api/v1/push
+        loki-pipeline-stages: |
+          - regex:
+              expression: '(level|lvl|severity)=(?P<level>\w+)'
+          - labels:
+              level:
+              severity:
 
   blueprints:
     build:
@@ -34,7 +44,7 @@ services:
     build:
       context: users
     volumes:
-      - ./users/src:/opt/users
+      - ./users/app:/opt/users
     logging:
       driver: loki
       options:
@@ -108,7 +118,7 @@ services:
       - "8089:8089"
     volumes:
       - ./compose/locust:/mnt/locust
-    command: -f /mnt/locust/locustfile.py --master -H http://master:8089
+    command: -f /mnt/locust/locustfiles/ --master -H http://master:8089
 
   locust-worker:
     image: locustio/locust
@@ -116,4 +126,4 @@ services:
       - ./compose/locust:/mnt/locust
     deploy:
       replicas: 2
-    command: -f /mnt/locust/locustfile.py --worker --master-host locust-master
+    command: -f /mnt/locust/locustfiles/ --worker --master-host locust-master
